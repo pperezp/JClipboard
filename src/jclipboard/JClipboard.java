@@ -15,20 +15,20 @@ import jclipboard.listeners.DataCopiedListener;
 public class JClipboard extends Thread {
 
     private List<DataCopiedListener> listeners;
+    private List<String> textList;
     private Clipboard clipboard;
     private Transferable dato;
     private DataFlavor flavor;
     private String text;
     private long milis;
-    private String last; // el último texto copiado
 
     public JClipboard(long milis, DataCopiedListener listener) {
         try {
             listeners = new ArrayList<>();
+            textList = new ArrayList<>();
             listeners.add(listener);
             this.milis = milis;
             flavor = new DataFlavor("application/x-java-serialized-object; class=java.lang.String");
-            last = "";
         } catch (ClassNotFoundException ex) {
             Logger.getLogger(JClipboard.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -49,12 +49,12 @@ public class JClipboard extends Thread {
                     if (dato.isDataFlavorSupported(flavor)) {//si lo copiado es String
                         text = (String) dato.getTransferData(flavor);
 
-                        if (!text.equalsIgnoreCase(last)) {
+                        if (!textList.contains(text)) {
                             listeners.forEach((lis) -> {
                                 lis.stringCopied(text);
                             });
                             
-                            last = text;
+                            textList.add(text);
                         }
 
                     }
@@ -67,6 +67,8 @@ public class JClipboard extends Thread {
                 Logger.getLogger(JClipboard.class.getName()).log(Level.SEVERE, null, ex);
             } catch (IOException ex) {
                 Logger.getLogger(JClipboard.class.getName()).log(Level.SEVERE, null, ex);
+            } catch(IllegalStateException ex){
+                System.out.println(ex.getMessage());
             }
         }
     }
