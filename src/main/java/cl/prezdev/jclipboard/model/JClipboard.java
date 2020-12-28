@@ -1,4 +1,4 @@
-package jclipboard;
+package cl.prezdev.jclipboard.model;
 
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
@@ -10,24 +10,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import jclipboard.listeners.DataCopiedListener;
 
 public class JClipboard extends Thread {
 
     private List<DataCopiedListener> listeners;
     private List<String> textList;
     private Clipboard clipboard;
-    private Transferable dato;
+    private Transferable transferable;
     private DataFlavor flavor;
     private String text;
-    private long milis;
+    private long millis;
 
-    public JClipboard(long milis, DataCopiedListener listener) {
+    public JClipboard(long millis, DataCopiedListener listener) {
         try {
             listeners = new ArrayList<>();
             textList = new ArrayList<>();
             listeners.add(listener);
-            this.milis = milis;
+            this.millis = millis;
             flavor = new DataFlavor("application/x-java-serialized-object; class=java.lang.String");
         } catch (ClassNotFoundException ex) {
             Logger.getLogger(JClipboard.class.getName()).log(Level.SEVERE, null, ex);
@@ -39,36 +38,33 @@ public class JClipboard extends Thread {
     }
 
     @Override
-    public void run() {
+    public void run()  {
         while (true) {
             try {
                 clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-                dato = clipboard.getContents(new Object());
+                transferable = clipboard.getContents(new Object());
 
-                if (dato != null) {
-                    if (dato.isDataFlavorSupported(flavor)) {//si lo copiado es String
-                        text = (String) dato.getTransferData(flavor);
+                if (transferable != null) {
+                    if (transferable.isDataFlavorSupported(flavor)) {//si lo copiado es String
+                        text = (String) transferable.getTransferData(flavor);
 
                         if (!textList.contains(text)) {
                             listeners.forEach((lis) -> {
                                 lis.stringCopied(text);
                             });
-                            
+
                             textList.add(text);
                         }
-
                     }
                 }
 
-                Thread.sleep(milis);
-            } catch (InterruptedException ex) {
-                Logger.getLogger(JClipboard.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (UnsupportedFlavorException ex) {
-                Logger.getLogger(JClipboard.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (IOException ex) {
+                Thread.sleep(millis);
+            } catch (UnsupportedFlavorException | IOException ex) {
                 Logger.getLogger(JClipboard.class.getName()).log(Level.SEVERE, null, ex);
             } catch(IllegalStateException ex){
                 System.out.println(ex.getMessage());
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
     }
